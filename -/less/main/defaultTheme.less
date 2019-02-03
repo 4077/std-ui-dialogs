@@ -1,0 +1,129 @@
+// head {
+@__nodeId__: ~"std_ui_dialogs__main_defaultTheme";
+// }
+
+@{__nodeId__}[instance='@{__instance__}'] {
+
+    .ui-dialog {
+        transition: opacity 0.2s;
+        font-family: verdana, arial, sans-serif;
+
+        &:hover {
+
+        }
+
+        &.ui-dialog-dragging {
+            opacity: 0.8;
+        }
+
+        .ui-dialog-titlebar {
+            position: relative;
+            border: 0;
+            padding: 0;
+            margin: 0;
+            width: 100%;
+            box-sizing: border-box;
+            background-color: #E0E0E0;
+
+            .ui-dialog-title {
+                display: block;
+                float: none;
+                width: 100%;
+                margin: 0;
+                font-size: 13px;
+                padding: 10px 13px;
+                font-weight: bold;
+                color: #000000;
+            }
+        }
+
+        .ui-dialog-titlebar {
+
+            > .buttons {
+
+                .button {
+
+                    &.size_reset {
+
+                        .icon {
+                            font-size: 8px;
+                        }
+                    }
+                }
+            }
+        }
+
+        //.ui-dialog-titlebar-close {
+        //    position: absolute;
+        //    z-index: 2;
+        //    right: .5em;
+        //    top: .5em;
+        //    width: 20px;
+        //    margin: 0;
+        //    padding: 1px;
+        //    height: 20px;
+        //    border: 0;
+        //    background-color: transparent;
+        //
+        //    &:hover {
+        //        border: 1px solid #E0DCD4;
+        //        background: #F9F6EC;
+        //
+        //        .ui-icon {
+        //            opacity: 1;
+        //        }
+        //    }
+        //
+        //    &:active {
+        //        border: 1px solid #A59B73;
+        //        background: #BFAE9B;
+        //    }
+        //}
+        //
+        //.ui-dialog-titlebar-minimize {
+        //    position: absolute;
+        //    z-index: 2;
+        //    right: .5em;
+        //    top: .5em;
+        //    width: 20px;
+        //    margin: 0;
+        //    padding: 1px;
+        //    height: 20px;
+        //    border: 0;
+        //    background-color: transparent;
+        //
+        //    &:hover {
+        //        border: 1px solid #E0DCD4;
+        //        background: #F9F6EC;
+        //
+        //        .ui-icon {
+        //            opacity: 1;
+        //        }
+        //    }
+        //
+        //    &:active {
+        //        border: 1px solid #A59B73;
+        //        background: #BFAE9B;
+        //    }
+        //}
+
+        .ui-dialog-content {
+            padding: 10px;
+
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+
+            > div {
+                flex-grow: 1;
+            }
+        }
+
+        &.p0 {
+
+            .ui-dialog-content {
+                padding: 0;
+            }
+        }
+    }
+}
