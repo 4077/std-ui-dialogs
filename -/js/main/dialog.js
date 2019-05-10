@@ -15,9 +15,11 @@ var __nodeNs__ = "std_ui_dialogs";
         },
 
         _create: function () {
-            var widget = this;
+            var w = this;
+            var o = w.options;
+            var $w = w.element;
 
-            widget.render();
+            w.render();
         },
 
         _getRendered: function () {
@@ -25,19 +27,18 @@ var __nodeNs__ = "std_ui_dialogs";
         },
 
         render: function () {
-            var widget = this;
-            var $widget = this.element;
+            var w = this;
+            var o = w.options;
+            var $w = w.element;
 
-            var $rendered = widget._getRendered();
+            var $rendered = w._getRendered();
             var $dispatcher = $(".std_ui_dialogs__main_dispatcher");
 
-            var pluginOptions = widget.options.pluginOptions;
+            var pluginOptions = o.pluginOptions;
 
             if (!$rendered.length) {
-                // $widget.attr("title", widget.options.title || pluginOptions.title);
-
                 var dialogOptions = {
-                    minimized: widget.options.minimized,
+                    minimized: o.minimized,
                     width:     'auto',
                     height:    'auto',
 
@@ -49,7 +50,7 @@ var __nodeNs__ = "std_ui_dialogs";
                         }, 0);
 
                         if (pluginOptions.blinkOnRender) {
-                            var $dialog = widget._getRendered();
+                            var $dialog = w._getRendered();
 
                             var blinks = 2;
 
@@ -68,39 +69,40 @@ var __nodeNs__ = "std_ui_dialogs";
 
                     focus: function () {
                         if (!ewma.cancelFollow) {
-                            var inFocus = widget.options.fullName == $dispatcher.std_ui_dialogs__main_dispatcher("option", "inFocus");
+                            var inFocus = o.fullName === $dispatcher.std_ui_dialogs__main_dispatcher("option", "inFocus");
+
+                            // p(inFocus);
+
                             var focusBlock = $dispatcher.std_ui_dialogs__main_dispatcher("option", "focusBlock");
 
                             if (!inFocus && !focusBlock) {
-                                $dispatcher.std_ui_dialogs__main_dispatcher("option", "inFocus", widget.options.fullName);
+                                $dispatcher.std_ui_dialogs__main_dispatcher("option", "inFocus", o.fullName);
 
                                 setTimeout(function () {
                                     var dragStarted = $dispatcher.std_ui_dialogs__main_dispatcher("option", "dragStarted");
 
                                     if (!dragStarted) {
-                                        widget.touch();
+                                        w.touch();
                                     }
                                 }, 200);
                             }
 
-                            ewma.multirequest.add(widget.options.paths.focus, {
-                                container: widget.options.container,
-                                name:      widget.options.name
+                            // todo убрать (проследить чтоб коммандер отдавал фокус)
+                            ewma.multirequest.add(o.paths.focus, {
+                                container: o.container,
+                                name:      o.name
                             });
                         }
                     },
 
                     dragStart: function (e, ui) {
                         $dispatcher.std_ui_dialogs__main_dispatcher("option", "dragStarted", true);
-
-                        // $widget.parent().css({opacity: 0.8});
                     },
 
                     dragStop: function () {
                         $dispatcher.std_ui_dialogs__main_dispatcher("option", "dragStarted", false);
 
-                        widget.updateOffset();
-                        // $widget.parent().css({opacity: 1});
+                        w.updateOffset();
                     },
 
                     resize: function () { // https://stackoverflow.com/a/35912702
@@ -113,57 +115,57 @@ var __nodeNs__ = "std_ui_dialogs";
                     },
 
                     resizeStop: function () {
-                        widget.updateSize();
+                        w.updateSize();
                     },
 
                     close: function () {
                         $dispatcher.std_ui_dialogs__main_dispatcher("option", "focusBlock", true);
 
-                        request(widget.options.paths.close, {
-                            container: widget.options.container,
-                            name:      widget.options.name
+                        request(o.paths.close, {
+                            container: o.container,
+                            name:      o.name
                         });
 
                         $dispatcher.std_ui_dialogs__main_dispatcher("option", "focusBlock", false);
 
-                        $(window).unbind("resize." + __nodeId__ + "." + widget.options.name);
+                        $(window).unbind("resize." + __nodeId__ + "." + o.name);
                     },
 
                     minimize: function (e, ui) {
-                        request(widget.options.paths.minimize, {
-                            container: widget.options.container,
-                            name:      widget.options.name,
+                        request(o.paths.minimize, {
+                            container: o.container,
+                            name:      o.name,
                             minimized: ui.options.minimized
                         });
                     },
 
                     resetSize: function (e, ui) {
-                        request(widget.options.paths.resetSize, {
-                            container: widget.options.container,
-                            name:      widget.options.name
+                        request(o.paths.resetSize, {
+                            container: o.container,
+                            name:      o.name
                         });
                     }
                 };
 
                 $.extend(dialogOptions, pluginOptions);
 
-                $widget.ewmaDialog(dialogOptions);
+                $w.ewmaDialog(dialogOptions);
 
-                var $dialog = $widget.closest(".ui-dialog");
+                var $dialog = $w.closest(".ui-dialog");
 
-                $widget.scrollLeft(pluginOptions.scrollLeft).scrollTop(pluginOptions.scrollTop);
+                $w.scrollLeft(pluginOptions.scrollLeft).scrollTop(pluginOptions.scrollTop);
 
                 setTimeout(function () {
                     var scrollTimeout;
 
-                    $widget.unbind("scroll");
-                    $widget.rebind("scroll." + __nodeId__, function () {
+                    $w.unbind("scroll");
+                    $w.rebind("scroll." + __nodeId__, function () {
                         if (scrollTimeout) {
                             clearTimeout(scrollTimeout);
                         }
 
                         scrollTimeout = setTimeout(function () {
-                            widget.updateScrollsPositions();
+                            w.updateScrollsPositions();
                         }, 400);
                     });
                 });
@@ -173,14 +175,11 @@ var __nodeNs__ = "std_ui_dialogs";
                 });
 
                 if (pluginOptions.center) {
-                    $(window).rebind("resize." + __nodeId__ + "." + widget.options.name, function () {
-                        $widget.ewmaDialog("option", "position", {my: "center", at: "center", of: window});
+                    $(window).rebind("resize." + __nodeId__ + "." + o.name, function () {
+                        $w.ewmaDialog("option", "position", {my: "center", at: "center", of: window});
                     });
                 } else {
                     if (pluginOptions.offset) {
-                        // ewma.console('scrollLeft: ' + $(window).scrollLeft());
-                        // ewma.console('scrollTop: ' + $(window).scrollTop());
-
                         $dialog.css({
                             left: pluginOptions.offset[0] + $(window).scrollLeft(),
                             top:  pluginOptions.offset[1] + $(window).scrollTop()
@@ -188,29 +187,31 @@ var __nodeNs__ = "std_ui_dialogs";
                     }
                 }
 
-                if (widget.options.hidden) {
+                if (o.hidden) {
                     $dialog.hide();
                 }
 
-                if (widget.options.minimized) {
+                if (o.minimized) {
                     $dialog.addClass("minimized");
 
                     $(".ui-dialog-content", $dialog).hide();
                 }
 
-                $dialog.addClass(widget.options.class);
+                $dialog.addClass(o.class);
             }
         },
 
         setPosition: function () {
-            var widget = this;
-            var $widget = widget.element;
-            var $dialog = $widget.closest(".ui-dialog");
-            var pluginOptions = widget.options.pluginOptions;
+            var w = this;
+            var o = w.options;
+            var $w = w.element;
+
+            var $dialog = $w.closest(".ui-dialog");
+            var pluginOptions = o.pluginOptions;
 
             if (pluginOptions.center) {
-                $(window).rebind("resize." + __nodeId__ + "." + widget.options.name, function () {
-                    $widget.ewmaDialog("option", "position", {my: "center", at: "center", of: window});
+                $(window).rebind("resize." + __nodeId__ + "." + o.name, function () {
+                    $w.ewmaDialog("option", "position", {my: "center", at: "center", of: window});
                 });
             } else {
                 if (pluginOptions.offset) {
@@ -223,30 +224,32 @@ var __nodeNs__ = "std_ui_dialogs";
         },
 
         remove: function () {
-            var widget = this;
+            var w = this;
+            var o = w.options;
+            var $w = w.element;
 
-            widget.element.ewmaDialog("destroyOverlay");
+            $w.ewmaDialog("destroyOverlay");
 
             var $rendered = this._getRendered();
-
             $rendered.remove();
 
-            var $notRendered = $("#dialog__" + this.options.fullName);
-
+            var $notRendered = $("#dialog__" + o.fullName);
             $notRendered.remove();
 
-            $(window).unbind("resize." + __nodeId__ + "." + this.options.name);
+            $(window).unbind("resize." + __nodeId__ + "." + o.name);
         },
 
         updateOffset: function () {
-            var widget = this;
+            var w = this;
+            var o = w.options;
+            var $w = w.element;
 
-            var $wrapper = widget.element.closest(".ui-dialog");
+            var $wrapper = $w.closest(".ui-dialog");
             var offset = $wrapper.offset();
 
             request(this.options.paths.update, {
-                container:  widget.options.container,
-                name:       widget.options.name,
+                container:  o.container,
+                name:       o.name,
                 updateData: {
                     offset: [
                         Math.round(offset.left - $(window).scrollLeft()),
@@ -257,21 +260,18 @@ var __nodeNs__ = "std_ui_dialogs";
         },
 
         updateSize: function () {
-            var widget = this;
+            var w = this;
+            var o = w.options;
+            var $w = w.element;
 
-            var $wrapper = widget.element.closest(".ui-dialog");
-            var offset = $wrapper.offset();
+            var $wrapper = $w.closest(".ui-dialog");
 
-            var heightPadding = parseInt($(widget.element).css('padding-top'), 10) + parseInt($(widget.element).css('padding-bottom'), 10);
+            var heightPadding = parseInt($w.css('padding-top'), 10) + parseInt($w.css('padding-bottom'), 10);
 
             request(this.options.paths.update, {
-                container:  widget.options.container,
-                name:       widget.options.name,
+                container:  o.container,
+                name:       o.name,
                 updateData: {
-                    // offset: [
-                    //     Math.round(offset.left - $(window).scrollLeft()),
-                    //     Math.round(offset.top - $(window).scrollTop())
-                    // ],
                     width:  Math.ceil($wrapper.width()),
                     height: Math.ceil($wrapper.innerHeight() - heightPadding) // почему только вертикальный
                 }
@@ -279,24 +279,28 @@ var __nodeNs__ = "std_ui_dialogs";
         },
 
         updateScrollsPositions: function () {
-            var widget = this;
+            var w = this;
+            var o = w.options;
+            var $w = w.element;
 
             request(this.options.paths.update, {
-                container:  widget.options.container,
-                name:       widget.options.name,
+                container:  o.container,
+                name:       o.name,
                 updateData: {
-                    scrollTop:  $(widget.element).scrollTop(),
-                    scrollLeft: $(widget.element).scrollLeft()
+                    scrollTop:  $w.scrollTop(),
+                    scrollLeft: $w.scrollLeft()
                 }
             }, null, true);
         },
 
         touch: function () {
-            var widget = this;
+            var w = this;
+            var o = w.options;
+            var $w = w.element;
 
             request(this.options.paths.update, {
-                container: widget.options.container,
-                name:      widget.options.name
+                container: o.container,
+                name:      o.name
             }, null, true);
         }
     });
