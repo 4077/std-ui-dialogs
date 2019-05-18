@@ -11,8 +11,8 @@ class Main extends \Controller
         if (!$this->commonAdded) {
             $this->c('>dispatcher:add');
 
-            $baseZIndex = dataSets()->get('std/ui/dialogs::base_zindex') or
-            $baseZIndex = 5000;
+            $baseZIndex = dataSets()->get('modules/std-ui-dialogs::base_zindex') or
+            $baseZIndex = 10000;
 
             $this->css(false, [
                 'baseZIndex' => $baseZIndex

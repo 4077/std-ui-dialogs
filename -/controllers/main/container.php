@@ -45,12 +45,15 @@ class Container extends \Controller
             'container' => $this->_instance(),
             'name'      => $name,
             'hidden'    => $this->data['hidden'] ?? false,
-            'minimized' => $this->data['minimized'] ?? false,
+            'state'     => 'normal',
+            'minimized' => $this->data['minimized'] ?? false, // del
             'touch'     => microtime(true)
         ]);
 
         $dialogs = &$this->s(':dialogs|');
-        $dialogs[$name] = $dialogData;
+        $dialogs[$name] = &$dialogData;
+
+        $dialogData['offset'] = $dialogData['offset_normal'];
 
         $c = $this->getDialogController($dialogData);
 
@@ -249,7 +252,11 @@ class Container extends \Controller
             'forgot_on_leave' => false,
             'forgot_on_close' => false,
             'hidden'          => false,
-            'minimized'       => false,
+            'minimized'       => false, // del
+            'state'           => 'normal',
+            'offset'          => false,
+            'offset_normal'   => false,
+            'autofit'         => true,
             'pluginOptions'   => []
         ];
     }

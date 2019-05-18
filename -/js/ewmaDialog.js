@@ -46,17 +46,17 @@ $.widget("ewma.ewmaDialog", $.ui.dialog, {
         }
 
         this.uiDialog.draggable({
-            containment: "document",
-            handle:      ".ui-dialog-titlebar",
-            start:       function (event, ui) {
+            // containment: "document",
+            handle: ".ui-dialog-titlebar",
+            start:  function (event, ui) {
                 that._addClass($(this), "ui-dialog-dragging");
                 that._blockFrames();
                 that._trigger("dragStart", event, filteredUi(ui));
             },
-            drag:        function (event, ui) {
+            drag:   function (event, ui) {
                 that._trigger("drag", event, filteredUi(ui));
             },
-            stop:        function (event, ui) {
+            stop:   function (event, ui) {
                 var left = ui.offset.left - that.document.scrollLeft(),
                     top = ui.offset.top - that.document.scrollTop();
 
@@ -93,15 +93,15 @@ $.widget("ewma.ewmaDialog", $.ui.dialog, {
         var dialog = this;
 
         $minimizeButton.click(function () {
-            dialog.minimize();
+            dialog._trigger("stash", event, this);
         });
 
         $titlebar.on("dblclick", function () {
-            dialog.minimize();
+            dialog.fit();
         });
 
         $sizeResetButton.click(function () {
-            dialog.resetSize();
+            dialog.fit();
         });
 
         $closeButton.click(function () {
@@ -129,7 +129,7 @@ $.widget("ewma.ewmaDialog", $.ui.dialog, {
         }
     },
 
-    minimize: function () {
+    /*minimize: function () {
         this.uiDialog.toggleClass("minimized");
 
         var dialog = this;
@@ -147,19 +147,17 @@ $.widget("ewma.ewmaDialog", $.ui.dialog, {
             $(".ui-dialog-content", dialog.uiDialog).show();
         }
 
-        dialog._trigger("minimize", event, this);
-    },
+        // dialog._trigger("minimize", event, this);
+    },*/
 
-    resetSize: function () {
+    fit: function () {
         var dialog = this;
         var $dialog = $(dialog.uiDialog);
 
         $dialog.height("auto").find(".ui-dialog-content").height("auto");
         $dialog.width("auto");
-        // dialog.option("height", "auto");
-        // dialog.option("width", "auto");
 
-        dialog._trigger("resetSize", event, this);
+        dialog._trigger("fit", event, this);
     },
 
     _focusTabbable: $.noop,

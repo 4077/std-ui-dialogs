@@ -9,3 +9,19 @@
 .ui-front {
     z-index: @baseZIndex;
 }
+
+.@{__nodeId__}__container {
+    overflow: hidden;
+    position: fixed;
+    z-index: 10000;
+    width: 100vw;
+    max-width:100%;
+    height: 100vh;
+    left: 0;
+    top: 0;
+    pointer-events: none;
+
+    .ui-dialog {
+        pointer-events: all;
+    }
+}

@@ -4,7 +4,7 @@ class ThemeContainer extends \Controller
 {
     public function add()
     {
-        $this->app->html->addContainer($this->_nodeInstance());
+        $this->app->html->addContainer($this->_nodeInstance(), '', $this->_nodeId('~') . '__container');
 
         $this->css($this->data('css_path') . '|' . $this->_nodeInstance(), [
             '__nodeId__' => $this->app->html->getContainerSelector()

@@ -29,6 +29,45 @@ class Xhr extends \Controller
         }
     }
 
+    public function updateOffset()
+    {
+        $name = $this->data('name');
+
+        $dialogs = &$this->s('~container:dialogs|');
+
+        if (isset($dialogs[$name])) {
+            $dialogData = &$dialogs[$name];
+
+            $updateData = $this->data('update_data');
+
+            remap($dialogData, $updateData, '
+                state,
+                offset,
+                offset_normal,
+                autofit
+            ');
+        }
+    }
+
+    public function updateSize()
+    {
+        $name = $this->data('name');
+
+        $dialogs = &$this->s('~container:dialogs|');
+
+        if (isset($dialogs[$name])) {
+            $dialogData = &$dialogs[$name];
+
+            $updateData = $this->data('update_data');
+
+            remap($dialogData, $updateData, '
+                pluginOptions/width     width,
+                pluginOptions/height    height,
+                autofit
+            ');
+        }
+    }
+
     public function resetSize()
     {
         $name = $this->data('name');
@@ -39,6 +78,7 @@ class Xhr extends \Controller
             $dialogData = &$dialogs[$name];
 
             ra($dialogData, [
+                'state'         => $this->data('state'),
                 'pluginOptions' => [
                     'width'  => 'auto',
                     'height' => 'auto'
@@ -46,6 +86,7 @@ class Xhr extends \Controller
             ]);
 
             $this->c('~container:updatePluginOptions:' . $name . '|', [
+                'state'      => $this->data('state'),
                 'updateData' => [
                     'width'  => 'auto',
                     'height' => 'auto'

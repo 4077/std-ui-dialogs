@@ -20,21 +20,33 @@ class Dialog extends \Controller
         $v = $this->v('|' . $this->fullName);
 
         $widgetData = [
-            'container'     => $this->data['container'],
-            'name'          => $this->data['name'],
-            'fullName'      => $this->fullName,
-            'pluginOptions' => $this->data['pluginOptions'],
-            'hidden'        => $this->data('hidden'),
-            'minimized'     => $this->data('minimized'),
-            'class'         => $this->data('class'),
-            'paths'         => [
-                'update'    => $this->_p('~xhr:update|' . $this->data['container']),
-                'close'     => $this->_p('~xhr:close|' . $this->data['container']),
-                'focus'     => $this->_p('~xhr:focus|' . $this->data['container']),
-                'minimize'  => $this->_p('~xhr:minimize|' . $this->data['container']),
-                'resetSize' => $this->_p('~xhr:resetSize|' . $this->data['container'])
-            ]
+            '.w'       => [
+                'dispatcher' => $this->_w('@dispatcher:')
+            ],
+            '.r'       => [
+                'update'       => $this->_p('~xhr:update|' . $this->data['container']),
+                'updateSize'   => $this->_p('~xhr:updateSize|' . $this->data['container']),
+                'updateOffset' => $this->_p('~xhr:updateOffset|' . $this->data['container']),
+                'close'        => $this->_p('~xhr:close|' . $this->data['container']),
+                'focus'        => $this->_p('~xhr:focus|' . $this->data['container']),
+                'minimize'     => $this->_p('~xhr:minimize|' . $this->data['container']),
+                'resetSize'    => $this->_p('~xhr:resetSize|' . $this->data['container'])
+            ],
+            'fullName' => $this->fullName
         ];
+
+        remap($widgetData, $this->data, '
+            container,
+            name,
+            pluginOptions,
+            hidden,
+            state,
+            offset,
+            offset_normal,
+            autofit,
+            minimized,
+            class
+        ');
 
         $this->widget(':|' . $this->fullName, $widgetData);
 

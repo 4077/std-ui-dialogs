@@ -3,27 +3,310 @@ var __nodeId__ = "std_ui_dialogs__main_dialog";
 var __nodeNs__ = "std_ui_dialogs";
 // }
 
+window["std_ui_dialogs__main_dialog"] = {
+
+    vectors: {
+
+        create: function (x, y) {
+            var node = window["std_ui_dialogs__main_dialog"];
+
+            return {
+                x: x,
+                y: y,
+
+                getLength: function () {
+                    return Math.sqrt(Math.pow(this.x, 2) + Math.pow(this.y, 2));
+                },
+
+                getAxis: function () {
+                    return Math.abs(this.h) < Math.abs(this.v) ? 'y' : 'x';
+                },
+
+                getDirection: function () {
+                    if (Math.abs(this.x) < Math.abs(this.y)) {
+                        return this.y > 0 ? 's' : 'n';
+                    } else {
+                        return this.x > 0 ? 'e' : 'w';
+                    }
+                },
+
+                getReverseDirection: function () {
+                    if (Math.abs(this.x) < Math.abs(this.y)) {
+                        return this.y > 0 ? 'n' : 's';
+                    } else {
+                        return this.x > 0 ? 'w' : 'e';
+                    }
+                },
+
+                multiple: function (k) {
+                    return node.vectors.create(this.x * k, this.y * k);
+                },
+
+                add: function (vector) {
+                    return node.vectors.create(this.x + vector.x, this.y + vector.y);
+                },
+
+                sub: function (vector) {
+                    return node.vectors.create(this.x - vector.x, this.y - vector.y);
+                },
+
+                invert: function () {
+                    return node.vectors.create(-this.x, -this.y);
+                }
+            };
+        },
+
+        get: function (a, b) {
+            var node = window["std_ui_dialogs__main_dialog"];
+
+            return node.vectors.create(b[0] - a[0], b[1] - a[1]);
+        }
+    },
+
+    rects: {
+
+        get: function (left, top, width, height) {
+            var node = window["std_ui_dialogs__main_dialog"];
+
+            return {
+                left:   left,
+                top:    top,
+                width:  width,
+                height: height,
+
+                getCenter: function () {
+                    return [left + width / 2, top + height / 2];
+                },
+
+                getCenterVector: function () {
+                    return node.vectors.create(this.width / 2, this.height / 2);
+                },
+
+                getEnclosingCircleRadius: function () {
+                    return this.getCenterVector().getLength();
+                }
+            };
+        }
+    },
+};
+
 (function (__nodeNs__, __nodeId__) {
-    $.widget(__nodeNs__ + "." + __nodeId__, {
+    $.widget(__nodeNs__ + "." + __nodeId__, $.ewma.node, {
+
         options: {
 
-            pluginOptions: {
-                position: {my: "center", at: "center", of: window},
+            offsets: {
+                normal:  [],
+                stashed: []
+            },
 
+            pluginOptions: {
+                position:      {my: "center", at: "center", of: window},
                 blinkOnRender: true
             }
         },
 
-        _create: function () {
+        vectors: {},
+
+        rects: {},
+
+        __create: function () {
             var w = this;
             var o = w.options;
             var $w = w.element;
 
+            w.vectors = window[__nodeId__].vectors;
+            w.rects = window[__nodeId__].rects;
+
             w.render();
         },
 
-        _getRendered: function () {
-            return $(".ui-dialog[aria-describedby='dialog_" + this.options.fullName + "']");
+        getDialogOptions: function () {
+            var w = this;
+            var o = w.options;
+            var $w = w.element;
+
+            return {
+                minimized: o.minimized,
+                width:     'auto',
+                height:    'auto',
+
+                create: function () {
+                    w.w('dispatcher').options.focusBlock = true;
+
+                    setTimeout(function () {
+                        w.w('dispatcher').options.focusBlock = false;
+                    }, 0);
+
+                    if (o.pluginOptions.blinkOnRender) {
+                        var $dialog = $w.closest(".ui-dialog");
+
+                        var blinks = 2;
+
+                        var blinkIntervalIteration = 0;
+                        var blinkInterval = setInterval(function () {
+                            blinkIntervalIteration++;
+
+                            $dialog.toggleClass("highlight");
+
+                            if (blinkIntervalIteration > blinks * 2 - 1) {
+                                clearInterval(blinkInterval);
+                            }
+                        }, 50);
+                    }
+                },
+
+                focus: function () {
+                    if (!ewma.cancelFollow) {
+                        var inFocus = o.fullName === w.w('dispatcher').options.inFocus;
+
+                        var focusBlock = w.w('dispatcher').options.focusBlock;
+
+                        if (!inFocus && !focusBlock) {
+                            w.w('dispatcher').options.focusBlock = o.fullName;
+
+                            setTimeout(function () {
+                                var dragStarted = w.w('dispatcher').options.dragStarted;
+
+                                if (!dragStarted) {
+                                    w.touch();
+                                }
+                            }, 200);
+                        }
+
+                        // todo убрать (проследить чтоб коммандер отдавал фокус)
+                        w.mr('focus', {
+                            container: o.container,
+                            name:      o.name
+                        });
+                    }
+                },
+
+                dragStart: function (e, ui) {
+                    w.w('dispatcher').options.dragStarted = true;
+
+                    if (o.offset === false) {
+                        var left = ui.offset.left;
+                        var top = ui.offset.top;
+
+                        o.offset = [left, top];
+                        o.offset_normal = [left, top];
+                    }
+                },
+
+                dragStop: function (e, ui) {
+                    w.w('dispatcher').options.dragStarted = false;
+
+                    var left = ui.offset.left;
+                    var top = ui.offset.top;
+
+                    var ww = $(window).width();
+                    var wh = $(window).height();
+
+                    if (e.clientX <= 30 || e.clientX >= ww - 30 || e.clientY <= 0 || e.clientY >= wh - 30) {
+                        w.stash();
+                    } else {
+                        o.state = 'normal';
+                        o.offset = [left, top];
+                        o.offset_normal = [left, top];
+
+                        o.autofit = false;
+
+                        w.updateOffset();
+                    }
+                },
+
+                resize: function () { // https://stackoverflow.com/a/35912702
+                    var heightPadding = parseInt($(this).css('padding-top'), 10) + parseInt($(this).css('padding-bottom'), 10),
+                        widthPadding = parseInt($(this).css('padding-left'), 10) + parseInt($(this).css('padding-right'), 10),
+                        titlebarMargin = parseInt($(this).prev('.ui-dialog-titlebar').css('margin-bottom'), 10);
+
+                    $(this).height($(this).parent().height() - $(this).prev('.ui-dialog-titlebar').outerHeight(true) - heightPadding - titlebarMargin);
+                    $(this).width($(this).prev('.ui-dialog-titlebar').outerWidth(true) - widthPadding);
+                },
+
+                resizeStop: function (e, ui) {
+                    o.autofit = false;
+
+                    w.updateSize();
+                },
+
+                close: function () {
+                    w.w('dispatcher').options.dragStarted = true;
+
+                    w.r('close', {
+                        container: o.container,
+                        name:      o.name
+                    });
+
+                    w.w('dispatcher').options.dragStarted = false;
+
+                    $(window).unbind("resize." + __nodeId__ + "." + o.name);
+                },
+
+                fit: function (e, ui) {
+                    var $dialog = ui.element.closest(".ui-dialog");
+                    var $contentDiv = $dialog.find(".ui-dialog-content > div");
+
+                    var wh = $(window).height();
+                    var ww = $(window).width();
+
+                    var position = $dialog.position();
+
+                    var top = position.top;
+                    var left = position.left;
+                    var width = $contentDiv.outerWidth();
+                    var height = $contentDiv.outerHeight();
+
+                    var setL = left < 20 ? 20 : left;
+                    var setT = top < 20 ? 20 : top;
+
+                    var setW = width + setL > ww - 20 ? ww - setL : "auto";
+                    var setH = height + setT > wh - 20 ? wh - setT - 20 : "auto";
+
+                    $dialog.css({
+                        left:   setL,
+                        top:    setT,
+                        width:  setW,
+                        height: setH
+                    });
+
+                    var dialogHeight = $dialog.height();
+                    var dialogWidth = $dialog.width();
+                    var barHeight = $(".ui-dialog-titlebar", $dialog).height();
+                    var contentHeight = dialogHeight - barHeight;
+
+                    p('dialogHeight:' + dialogHeight);
+                    p('barHeight:' + barHeight);
+                    p('contentHeight:' + contentHeight);
+
+                    $(".ui-dialog-content", $dialog).outerWidth(dialogWidth).outerHeight(contentHeight);
+
+                    o.autofit = true;
+
+                    w.updateSize();
+                },
+
+
+                /*minimize: function (e, ui) {
+                    w.r('minimize', {
+                        container: o.container,
+                        name:      o.name,
+                        minimized: ui.options.minimized
+                    });
+                },*/
+
+                stash: function (e, ui) {
+                    w.stash();
+                },
+
+                resetSize: function (e, ui) {
+                    w.r('resetSize', {
+                        container: o.container,
+                        name:      o.name
+                    });
+                }
+            };
         },
 
         render: function () {
@@ -31,129 +314,18 @@ var __nodeNs__ = "std_ui_dialogs";
             var o = w.options;
             var $w = w.element;
 
-            var $rendered = w._getRendered();
-            var $dispatcher = $(".std_ui_dialogs__main_dispatcher");
+            // p(o);
 
-            var pluginOptions = o.pluginOptions;
+            var $dialog = $w.closest(".ui-dialog");
 
-            if (!$rendered.length) {
-                var dialogOptions = {
-                    minimized: o.minimized,
-                    width:     'auto',
-                    height:    'auto',
+            if (!$dialog.length) {
+                var dialogOptions = w.getDialogOptions();
 
-                    create: function () {
-                        $dispatcher.std_ui_dialogs__main_dispatcher("option", "focusBlock", true);
-
-                        setTimeout(function () {
-                            $dispatcher.std_ui_dialogs__main_dispatcher("option", "focusBlock", false);
-                        }, 0);
-
-                        if (pluginOptions.blinkOnRender) {
-                            var $dialog = w._getRendered();
-
-                            var blinks = 2;
-
-                            var blinkIntervalIteration = 0;
-                            var blinkInterval = setInterval(function () {
-                                blinkIntervalIteration++;
-
-                                $dialog.toggleClass("highlight");
-
-                                if (blinkIntervalIteration > blinks * 2 - 1) {
-                                    clearInterval(blinkInterval);
-                                }
-                            }, 50);
-                        }
-                    },
-
-                    focus: function () {
-                        if (!ewma.cancelFollow) {
-                            var inFocus = o.fullName === $dispatcher.std_ui_dialogs__main_dispatcher("option", "inFocus");
-
-                            // p(inFocus);
-
-                            var focusBlock = $dispatcher.std_ui_dialogs__main_dispatcher("option", "focusBlock");
-
-                            if (!inFocus && !focusBlock) {
-                                $dispatcher.std_ui_dialogs__main_dispatcher("option", "inFocus", o.fullName);
-
-                                setTimeout(function () {
-                                    var dragStarted = $dispatcher.std_ui_dialogs__main_dispatcher("option", "dragStarted");
-
-                                    if (!dragStarted) {
-                                        w.touch();
-                                    }
-                                }, 200);
-                            }
-
-                            // todo убрать (проследить чтоб коммандер отдавал фокус)
-                            ewma.multirequest.add(o.paths.focus, {
-                                container: o.container,
-                                name:      o.name
-                            });
-                        }
-                    },
-
-                    dragStart: function (e, ui) {
-                        $dispatcher.std_ui_dialogs__main_dispatcher("option", "dragStarted", true);
-                    },
-
-                    dragStop: function () {
-                        $dispatcher.std_ui_dialogs__main_dispatcher("option", "dragStarted", false);
-
-                        w.updateOffset();
-                    },
-
-                    resize: function () { // https://stackoverflow.com/a/35912702
-                        var heightPadding = parseInt($(this).css('padding-top'), 10) + parseInt($(this).css('padding-bottom'), 10),
-                            widthPadding = parseInt($(this).css('padding-left'), 10) + parseInt($(this).css('padding-right'), 10),
-                            titlebarMargin = parseInt($(this).prev('.ui-dialog-titlebar').css('margin-bottom'), 10);
-
-                        $(this).height($(this).parent().height() - $(this).prev('.ui-dialog-titlebar').outerHeight(true) - heightPadding - titlebarMargin);
-                        $(this).width($(this).prev('.ui-dialog-titlebar').outerWidth(true) - widthPadding);
-                    },
-
-                    resizeStop: function () {
-                        w.updateSize();
-                    },
-
-                    close: function () {
-                        $dispatcher.std_ui_dialogs__main_dispatcher("option", "focusBlock", true);
-
-                        request(o.paths.close, {
-                            container: o.container,
-                            name:      o.name
-                        });
-
-                        $dispatcher.std_ui_dialogs__main_dispatcher("option", "focusBlock", false);
-
-                        $(window).unbind("resize." + __nodeId__ + "." + o.name);
-                    },
-
-                    minimize: function (e, ui) {
-                        request(o.paths.minimize, {
-                            container: o.container,
-                            name:      o.name,
-                            minimized: ui.options.minimized
-                        });
-                    },
-
-                    resetSize: function (e, ui) {
-                        request(o.paths.resetSize, {
-                            container: o.container,
-                            name:      o.name
-                        });
-                    }
-                };
-
-                $.extend(dialogOptions, pluginOptions);
+                $.extend(dialogOptions, o.pluginOptions);
 
                 $w.ewmaDialog(dialogOptions);
 
-                var $dialog = $w.closest(".ui-dialog");
-
-                $w.scrollLeft(pluginOptions.scrollLeft).scrollTop(pluginOptions.scrollTop);
+                $w.scrollLeft(o.pluginOptions.scrollLeft).scrollTop(o.pluginOptions.scrollTop);
 
                 setTimeout(function () {
                     var scrollTimeout;
@@ -170,58 +342,141 @@ var __nodeNs__ = "std_ui_dialogs";
                     });
                 });
 
+                $dialog = $w.closest(".ui-dialog");
+
                 $dialog.rebind("click." + __nodeId__, function (e) {
                     e.stopPropagation();
                 });
 
-                if (pluginOptions.center) {
-                    $(window).rebind("resize." + __nodeId__ + "." + o.name, function () {
-                        $w.ewmaDialog("option", "position", {my: "center", at: "center", of: window});
-                    });
+                if (o.offset) {
+                    w.setOffset(o.offset);
                 } else {
-                    if (pluginOptions.offset) {
-                        $dialog.css({
-                            left: pluginOptions.offset[0] + $(window).scrollLeft(),
-                            top:  pluginOptions.offset[1] + $(window).scrollTop()
-                        });
-                    }
+                    $w.ewmaDialog("option", "position", {my: "center", at: "center", of: window});
+
+                    $dialog.height("auto").find(".ui-dialog-content").height("auto");
+                    $dialog.width("auto");
+
+                    setTimeout(function () {
+                        $w.ewmaDialog("fit");
+                    });
+
+                    setTimeout(function () {
+                        var left = $dialog.offset().left;
+                        var top = $dialog.offset().top;
+
+                        o.offset = [left, top];
+                        o.offset_normal = [left, top];
+
+                        w.updateOffset();
+                    });
+                }
+
+                if (o.autofit) {
+                    setTimeout(function () {
+                        $w.ewmaDialog("fit");
+                    });
                 }
 
                 if (o.hidden) {
                     $dialog.hide();
                 }
 
-                if (o.minimized) {
+                /*if (o.minimized) {
                     $dialog.addClass("minimized");
 
                     $(".ui-dialog-content", $dialog).hide();
-                }
+                }*/
 
                 $dialog.addClass(o.class);
             }
         },
 
-        setPosition: function () {
+        get$dialog: function () {
+            return this.element.closest(".ui-dialog");
+        },
+
+        //
+
+        revealStart: function () {
+            var w = this;
+            var o = w.options;
+            var $w = w.element;
+
+            if (o.state === 'stashed') {
+                w.setOffset(o.offset_normal, 151);
+
+                var $dialog = w.get$dialog();
+
+                $dialog.bind("mouseenter." + __nodeId__ + ".reveal", function () {
+                    w.w('dispatcher').hoveredDialog = w;
+                });
+
+                $dialog.bind("mouseleave." + __nodeId__ + ".reveal", function () {
+                    w.w('dispatcher').hoveredDialog = false;
+                });
+            }
+        },
+
+        revealStop: function () {
+            var w = this;
+            var o = w.options;
+            var $w = w.element;
+
+            if (o.state === 'stashed') {
+                var hoveredDialog = w.w('dispatcher').hoveredDialog;
+
+                if (hoveredDialog.uuid === w.uuid) {
+                    o.state = 'normal';
+                    o.offset = [o.offset_normal[0], o.offset_normal[1]];
+
+                    w.setOffset(o.offset_normal);
+                    w.updateOffset();
+                } else {
+                    w.setOffset(o.offset, 151);
+                }
+            }
+        },
+
+        stash: function () {
             var w = this;
             var o = w.options;
             var $w = w.element;
 
             var $dialog = $w.closest(".ui-dialog");
-            var pluginOptions = o.pluginOptions;
 
-            if (pluginOptions.center) {
-                $(window).rebind("resize." + __nodeId__ + "." + o.name, function () {
-                    $w.ewmaDialog("option", "position", {my: "center", at: "center", of: window});
-                });
-            } else {
-                if (pluginOptions.offset) {
-                    $dialog.css({
-                        left: pluginOptions.offset[0] + $(window).scrollLeft(),
-                        top:  pluginOptions.offset[1] + $(window).scrollTop()
-                    });
-                }
+            if (o.state === 'normal') {
+                var $window = $(window);
+
+                var left = $dialog.offset().left;
+                var top = $dialog.offset().top;
+
+                var screenRect = w.rects.get(0, 0, $window.width(), $window.height());
+                var dialogRect = w.rects.get(left, top, $dialog.width(), $dialog.height());
+
+                var dialogVector = w.vectors.get(screenRect.getCenter(), dialogRect.getCenter());
+
+                var stashRadius = screenRect.getEnclosingCircleRadius();
+                var dialogRadius = dialogRect.getEnclosingCircleRadius();
+
+                var k = (stashRadius + dialogRadius) / dialogVector.getLength();
+
+                var stashVector = dialogVector.multiple(k);
+
+                var positionVector = screenRect.getCenterVector().add(stashVector).sub(dialogRect.getCenterVector());
+
+                o.state = 'stashed';
+                o.offset = [positionVector.x, positionVector.y];
+
+                $dialog.animate({
+                    left: positionVector.x,
+                    top:  positionVector.y
+                }, 151);
+
+                w.updateOffset();
             }
         },
+
+        //
 
         remove: function () {
             var w = this;
@@ -230,7 +485,7 @@ var __nodeNs__ = "std_ui_dialogs";
 
             $w.ewmaDialog("destroyOverlay");
 
-            var $rendered = this._getRendered();
+            var $rendered = w.get$dialog();
             $rendered.remove();
 
             var $notRendered = $("#dialog__" + o.fullName);
@@ -239,24 +494,24 @@ var __nodeNs__ = "std_ui_dialogs";
             $(window).unbind("resize." + __nodeId__ + "." + o.name);
         },
 
+        //
+        //
+        //
+
         updateOffset: function () {
             var w = this;
             var o = w.options;
-            var $w = w.element;
 
-            var $wrapper = $w.closest(".ui-dialog");
-            var offset = $wrapper.offset();
-
-            request(this.options.paths.update, {
-                container:  o.container,
-                name:       o.name,
-                updateData: {
-                    offset: [
-                        Math.round(offset.left - $(window).scrollLeft()),
-                        Math.round(offset.top - $(window).scrollTop())
-                    ]
+            w.mr('updateOffset', {
+                container:   o.container,
+                name:        o.name,
+                update_data: {
+                    autofit:       o.autofit,
+                    state:         o.state,
+                    offset:        o.offset,
+                    offset_normal: o.offset_normal
                 }
-            }, null, true);
+            });
         },
 
         updateSize: function () {
@@ -264,18 +519,34 @@ var __nodeNs__ = "std_ui_dialogs";
             var o = w.options;
             var $w = w.element;
 
-            var $wrapper = $w.closest(".ui-dialog");
+            var $dialog = $w.closest(".ui-dialog");
 
             var heightPadding = parseInt($w.css('padding-top'), 10) + parseInt($w.css('padding-bottom'), 10);
 
-            request(this.options.paths.update, {
-                container:  o.container,
-                name:       o.name,
-                updateData: {
-                    width:  Math.ceil($wrapper.width()),
-                    height: Math.ceil($wrapper.innerHeight() - heightPadding) // почему только вертикальный
+            w.mr('updateSize', {
+                container:   o.container,
+                name:        o.name,
+                update_data: {
+                    autofit: o.autofit,
+                    width:   Math.ceil($dialog.width()),
+                    height:  Math.ceil($dialog.innerHeight() - heightPadding)
                 }
-            }, null, true);
+            });
+        },
+
+        setOffset: function (position, duration) {
+            var w = this;
+            var o = w.options;
+            var $w = w.element;
+
+            duration = duration || 0;
+
+            var $dialog = $w.closest(".ui-dialog");
+
+            $dialog.stop().animate({
+                left: position[0],
+                top:  position[1]
+            }, duration);
         },
 
         updateScrollsPositions: function () {
@@ -283,14 +554,14 @@ var __nodeNs__ = "std_ui_dialogs";
             var o = w.options;
             var $w = w.element;
 
-            request(this.options.paths.update, {
+            w.mr('update', {
                 container:  o.container,
                 name:       o.name,
                 updateData: {
                     scrollTop:  $w.scrollTop(),
                     scrollLeft: $w.scrollLeft()
                 }
-            }, null, true);
+            });
         },
 
         touch: function () {
@@ -298,10 +569,10 @@ var __nodeNs__ = "std_ui_dialogs";
             var o = w.options;
             var $w = w.element;
 
-            request(this.options.paths.update, {
+            w.mr('update', {
                 container: o.container,
                 name:      o.name
-            }, null, true);
+            });
         }
     });
 })(__nodeNs__, __nodeId__);
