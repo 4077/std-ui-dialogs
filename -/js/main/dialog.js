@@ -186,8 +186,8 @@ window["std_ui_dialogs__main_dialog"] = {
                     w.w('dispatcher').options.dragStarted = true;
 
                     if (o.offset === false) {
-                        var left = ui.offset.left;
-                        var top = ui.offset.top;
+                        var left = ui.position.left;
+                        var top = ui.position.top;
 
                         o.offset = [left, top];
                         o.offset_normal = [left, top];
@@ -197,8 +197,8 @@ window["std_ui_dialogs__main_dialog"] = {
                 dragStop: function (e, ui) {
                     w.w('dispatcher').options.dragStarted = false;
 
-                    var left = ui.offset.left;
-                    var top = ui.offset.top;
+                    var left = ui.position.left;
+                    var top = ui.position.top;
 
                     var ww = $(window).width();
                     var wh = $(window).height();
@@ -275,10 +275,6 @@ window["std_ui_dialogs__main_dialog"] = {
                     var dialogWidth = $dialog.width();
                     var barHeight = $(".ui-dialog-titlebar", $dialog).height();
                     var contentHeight = dialogHeight - barHeight;
-
-                    p('dialogHeight:' + dialogHeight);
-                    p('barHeight:' + barHeight);
-                    p('contentHeight:' + contentHeight);
 
                     $(".ui-dialog-content", $dialog).outerWidth(dialogWidth).outerHeight(contentHeight);
 
@@ -361,8 +357,8 @@ window["std_ui_dialogs__main_dialog"] = {
                     });
 
                     setTimeout(function () {
-                        var left = $dialog.offset().left;
-                        var top = $dialog.offset().top;
+                        var left = $dialog.position().left;
+                        var top = $dialog.position().top;
 
                         o.offset = [left, top];
                         o.offset_normal = [left, top];
@@ -447,8 +443,8 @@ window["std_ui_dialogs__main_dialog"] = {
             if (o.state === 'normal') {
                 var $window = $(window);
 
-                var left = $dialog.offset().left;
-                var top = $dialog.offset().top;
+                var left = $dialog.position().left;
+                var top = $dialog.position().top;
 
                 var screenRect = w.rects.get(0, 0, $window.width(), $window.height());
                 var dialogRect = w.rects.get(left, top, $dialog.width(), $dialog.height());
