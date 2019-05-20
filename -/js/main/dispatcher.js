@@ -58,7 +58,7 @@ var __nodeNs__ = "std_ui_dialogs";
                     }
 
                     if (e.which === 68) { // d
-                        o.tmpStash = !o.tmpStash;
+                        w._setTmpStash(!o.tmpStash);
 
                         w.each(function ($dialog) {
                             if (o.tmpStash) {
@@ -88,7 +88,7 @@ var __nodeNs__ = "std_ui_dialogs";
                             $dialog.tmpStashStop();
                         });
 
-                        o.tmpStash = false;
+                        w._setTmpStash(false);
                     } else {
                         w.r('updateTmpStash', {
                             enabled: o.tmpStash
@@ -100,12 +100,38 @@ var __nodeNs__ = "std_ui_dialogs";
             });
         },
 
-        tmpStashingStart: function () {
+        tmpStashToggle: function () {
+            var w = this;
+            var o = w.options;
+            var $w = w.element;
 
+            w._setTmpStash(!o.tmpStash);
+
+            w.each(function ($dialog) {
+                if (o.tmpStash) {
+                    $dialog.tmpStashStart();
+                } else {
+                    $dialog.tmpStashStop();
+                }
+            });
+
+            w.r('updateTmpStash', {
+                enabled: o.tmpStash
+            });
+
+            return o.tmpStash;
         },
 
-        tmpStashingStop: function () {
+        _setTmpStash: function (value) {
+            var w = this;
+            var o = w.options;
+            var $w = w.element;
 
+            o.tmpStash = value;
+
+            ewma.trigger('std/ui/dialogs/tmpStashToggle', {
+                enabled: o.tmpStash
+            });
         },
 
         fitStart: function () {
