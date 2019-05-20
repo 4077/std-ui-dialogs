@@ -350,7 +350,7 @@ window["std_ui_dialogs__main_dialog"] = {
                 var scrollTimeout;
 
                 $w.unbind("scroll");
-                $w.rebind("scroll." + __nodeId__, function () {
+                $w.rebind("scroll." + __nodeId__, function (e) {
                     if (scrollTimeout) {
                         clearTimeout(scrollTimeout);
                     }
@@ -358,6 +358,8 @@ window["std_ui_dialogs__main_dialog"] = {
                     scrollTimeout = setTimeout(function () {
                         w.updateScrollsPositions();
                     }, 400);
+
+                    e.stopPropagation();
                 });
             });
 
