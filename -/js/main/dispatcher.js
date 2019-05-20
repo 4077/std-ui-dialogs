@@ -14,15 +14,30 @@ var __nodeNs__ = "std_ui_dialogs";
                 e.stopPropagation();
             });
 
+            w.render();
             w.bindKeyboard();
         },
 
-        showOutsideDialogsMode: false,
-
         hoveredDialog: false,
+
+        render: function () {
+            var w = this;
+            var o = w.options;
+            var $w = w.element;
+
+            /*setTimeout(function () {
+                if (o.tmpStash) {
+                    w.each(function ($dialog) {
+                        $dialog.tmpStashStart(0);
+                    });
+                }
+            });*/
+        },
 
         bindKeyboard: function () {
             var w = this;
+            var o = w.options;
+            var $w = w.element;
 
             var $body = $("body");
 
@@ -41,11 +56,22 @@ var __nodeNs__ = "std_ui_dialogs";
                     if (e.which === 83) { // s
                         // w.fitStart();
                     }
+
+                    if (e.which === 68) { // d
+                        o.tmpStash = !o.tmpStash;
+
+                        w.each(function ($dialog) {
+                            if (o.tmpStash) {
+                                $dialog.tmpStashStart();
+                            } else {
+                                $dialog.tmpStashStop();
+                            }
+                        });
+                    }
                 }
             });
 
             $body.bind("keyup." + __nodeId__, function (e) {
-                // if (Date.now() - keydownTime > 250) {
                 if (e.which === 87) { // w
                     w.each(function ($dialog) {
                         $dialog.revealStop();
@@ -56,15 +82,30 @@ var __nodeNs__ = "std_ui_dialogs";
                     // w.fitStop();
                 }
 
-                keydownTime = false;
-                /*} else {
-                    if (e.which === 87) { // w
+                if (e.which === 68) { // d
+                    if (Date.now() - keydownTime > 250) {
                         w.each(function ($dialog) {
-                            $dialog.stash(true);
+                            $dialog.tmpStashStop();
+                        });
+
+                        o.tmpStash = false;
+                    } else {
+                        w.r('updateTmpStash', {
+                            enabled: o.tmpStash
                         });
                     }
-                }*/
+                }
+
+                keydownTime = false;
             });
+        },
+
+        tmpStashingStart: function () {
+
+        },
+
+        tmpStashingStop: function () {
+
         },
 
         fitStart: function () {

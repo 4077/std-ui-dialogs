@@ -204,7 +204,7 @@ window["std_ui_dialogs__main_dialog"] = {
                     var wh = $(window).height();
 
                     if (e.clientX <= 30 || e.clientX >= ww - 30 || e.clientY <= 0 || e.clientY >= wh - 30) {
-                        w.stash();
+                        w._stash();
                     } else {
                         o.state = 'normal';
                         o.offset = [left, top];
@@ -227,6 +227,12 @@ window["std_ui_dialogs__main_dialog"] = {
 
                 resizeStop: function (e, ui) {
                     o.autofit = false;
+
+                    var left = ui.position.left;
+                    var top = ui.position.top;
+
+                    o.offset = [left, top];
+                    o.offset_normal = [left, top];
 
                     w.updateSize();
                 },
@@ -293,7 +299,7 @@ window["std_ui_dialogs__main_dialog"] = {
                 },*/
 
                 stash: function (e, ui) {
-                    w.stash();
+                    w._stash();
                 },
 
                 resetSize: function (e, ui) {
@@ -315,76 +321,94 @@ window["std_ui_dialogs__main_dialog"] = {
             var $dialog = $w.closest(".ui-dialog");
 
             if (!$dialog.length) {
-                var dialogOptions = w.getDialogOptions();
+                var dispatcher = w.w('dispatcher');
 
-                $.extend(dialogOptions, o.pluginOptions);
+                $dialog = w.renderDialog();
 
-                $w.ewmaDialog(dialogOptions);
+                if (dispatcher.options.tmpStash) {
+                    $dialog.hide();
+                } else {
 
-                $w.scrollLeft(o.pluginOptions.scrollLeft).scrollTop(o.pluginOptions.scrollTop);
+                }
+            }
+        },
+
+        renderDialog: function () {
+            var w = this;
+            var o = w.options;
+            var $w = w.element;
+
+            var dialogOptions = w.getDialogOptions();
+
+            $.extend(dialogOptions, o.pluginOptions);
+
+            $w.ewmaDialog(dialogOptions);
+
+            $w.scrollLeft(o.pluginOptions.scrollLeft).scrollTop(o.pluginOptions.scrollTop);
+
+            setTimeout(function () {
+                var scrollTimeout;
+
+                $w.unbind("scroll");
+                $w.rebind("scroll." + __nodeId__, function () {
+                    if (scrollTimeout) {
+                        clearTimeout(scrollTimeout);
+                    }
+
+                    scrollTimeout = setTimeout(function () {
+                        w.updateScrollsPositions();
+                    }, 400);
+                });
+            });
+
+            $dialog = $w.closest(".ui-dialog");
+
+            $dialog.rebind("click." + __nodeId__, function (e) {
+                e.stopPropagation();
+            });
+
+            if (o.offset) {
+                w.renderOffset(o.offset);
+            } else {
+                $w.ewmaDialog("option", "position", {my: "center", at: "center", of: window});
+
+                $dialog.height("auto").find(".ui-dialog-content").height("auto");
+                $dialog.width("auto");
 
                 setTimeout(function () {
-                    var scrollTimeout;
-
-                    $w.unbind("scroll");
-                    $w.rebind("scroll." + __nodeId__, function () {
-                        if (scrollTimeout) {
-                            clearTimeout(scrollTimeout);
-                        }
-
-                        scrollTimeout = setTimeout(function () {
-                            w.updateScrollsPositions();
-                        }, 400);
-                    });
+                    $w.ewmaDialog("fit");
                 });
 
-                $dialog = $w.closest(".ui-dialog");
+                setTimeout(function () {
+                    var left = $dialog.position().left;
+                    var top = $dialog.position().top;
 
-                $dialog.rebind("click." + __nodeId__, function (e) {
-                    e.stopPropagation();
+                    o.offset = [left, top];
+                    o.offset_normal = [left, top];
+
+                    w.updateOffset();
                 });
-
-                if (o.offset) {
-                    w.setOffset(o.offset);
-                } else {
-                    $w.ewmaDialog("option", "position", {my: "center", at: "center", of: window});
-
-                    $dialog.height("auto").find(".ui-dialog-content").height("auto");
-                    $dialog.width("auto");
-
-                    setTimeout(function () {
-                        $w.ewmaDialog("fit");
-                    });
-
-                    setTimeout(function () {
-                        var left = $dialog.position().left;
-                        var top = $dialog.position().top;
-
-                        o.offset = [left, top];
-                        o.offset_normal = [left, top];
-
-                        w.updateOffset();
-                    });
-                }
-
-                if (o.autofit) {
-                    setTimeout(function () {
-                        $w.ewmaDialog("fit");
-                    });
-                }
-
-                if (o.hidden) {
-                    $dialog.hide();
-                }
-
-                /*if (o.minimized) {
-                    $dialog.addClass("minimized");
-
-                    $(".ui-dialog-content", $dialog).hide();
-                }*/
-
-                $dialog.addClass(o.class);
             }
+
+            if (o.autofit) {
+                setTimeout(function () {
+                    $w.ewmaDialog("fit");
+                });
+            }
+
+            if (o.hidden) {
+                $dialog.hide();
+            }
+
+            /*if (o.minimized) {
+                $dialog.addClass("minimized");
+
+                $(".ui-dialog-content", $dialog).hide();
+            }*/
+
+            $dialog.addClass(o.class);
+
+            return $dialog;
         },
 
         get$dialog: function () {
@@ -393,13 +417,42 @@ window["std_ui_dialogs__main_dialog"] = {
 
         //
 
+        tmpStashStart: function (duration) {
+            var w = this;
+            var o = w.options;
+            var $w = w.element;
+
+            p('s start');
+
+            if (o.state === 'normal') {
+                var positionVector = w.getStashPositionVector();
+
+                // o.state = 'stashed';
+                // o.offset = [positionVector.x, positionVector.y];
+
+                w.renderOffset([positionVector.x, positionVector.y], duration === 0 ? 0 : duration || 151);
+            }
+        },
+
+        tmpStashStop: function () {
+            var w = this;
+            var o = w.options;
+            var $w = w.element;
+
+            if (o.state === 'normal') {
+                w.get$dialog().show();
+
+                w.renderOffset(o.offset_normal, 151);
+            }
+        },
+
         revealStart: function () {
             var w = this;
             var o = w.options;
             var $w = w.element;
 
             if (o.state === 'stashed') {
-                w.setOffset(o.offset_normal, 151);
+                w.renderOffset(o.offset_normal, 151);
 
                 var $dialog = w.get$dialog();
 
@@ -425,51 +478,55 @@ window["std_ui_dialogs__main_dialog"] = {
                     o.state = 'normal';
                     o.offset = [o.offset_normal[0], o.offset_normal[1]];
 
-                    w.setOffset(o.offset_normal);
+                    w.renderOffset(o.offset_normal);
                     w.updateOffset();
                 } else {
-                    w.setOffset(o.offset, 151);
+                    w.renderOffset(o.offset, 151);
                 }
             }
         },
 
-        stash: function () {
+        _stash: function () {
             var w = this;
             var o = w.options;
             var $w = w.element;
 
-            var $dialog = $w.closest(".ui-dialog");
-
             if (o.state === 'normal') {
-                var $window = $(window);
-
-                var left = $dialog.position().left;
-                var top = $dialog.position().top;
-
-                var screenRect = w.rects.get(0, 0, $window.width(), $window.height());
-                var dialogRect = w.rects.get(left, top, $dialog.width(), $dialog.height());
-
-                var dialogVector = w.vectors.get(screenRect.getCenter(), dialogRect.getCenter());
-
-                var stashRadius = screenRect.getEnclosingCircleRadius();
-                var dialogRadius = dialogRect.getEnclosingCircleRadius();
-
-                var k = (stashRadius + dialogRadius) / dialogVector.getLength();
-
-                var stashVector = dialogVector.multiple(k);
-
-                var positionVector = screenRect.getCenterVector().add(stashVector).sub(dialogRect.getCenterVector());
+                var positionVector = w.getStashPositionVector();
 
                 o.state = 'stashed';
                 o.offset = [positionVector.x, positionVector.y];
 
-                $dialog.animate({
-                    left: positionVector.x,
-                    top:  positionVector.y
-                }, 151);
+                w.renderOffset(o.offset, 151);
 
                 w.updateOffset();
             }
+        },
+
+        getStashPositionVector: function () {
+            var w = this;
+            var o = w.options;
+            var $w = w.element;
+
+            var $window = $(window);
+            var $dialog = $w.closest(".ui-dialog");
+
+            var left = $dialog.position().left;
+            var top = $dialog.position().top;
+
+            var screenRect = w.rects.get(0, 0, $window.width(), $window.height());
+            var dialogRect = w.rects.get(left, top, $dialog.width(), $dialog.height());
+
+            var dialogVector = w.vectors.get(screenRect.getCenter(), dialogRect.getCenter());
+
+            var stashRadius = screenRect.getEnclosingCircleRadius();
+            var dialogRadius = dialogRect.getEnclosingCircleRadius();
+
+            var k = (stashRadius + dialogRadius) / dialogVector.getLength();
+
+            var stashVector = dialogVector.multiple(k);
+
+            return screenRect.getCenterVector().add(stashVector).sub(dialogRect.getCenterVector());
         },
 
         //
@@ -523,14 +580,16 @@ window["std_ui_dialogs__main_dialog"] = {
                 container:   o.container,
                 name:        o.name,
                 update_data: {
-                    autofit: o.autofit,
-                    width:   Math.ceil($dialog.width()),
-                    height:  Math.ceil($dialog.innerHeight() - heightPadding)
+                    autofit:       o.autofit,
+                    offset:        o.offset,
+                    offset_normal: o.offset_normal,
+                    width:         Math.ceil($dialog.width()),
+                    height:        Math.ceil($dialog.innerHeight() - heightPadding)
                 }
             });
         },
 
-        setOffset: function (position, duration) {
+        renderOffset: function (position, duration) {
             var w = this;
             var o = w.options;
             var $w = w.element;

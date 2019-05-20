@@ -61,9 +61,11 @@ class Xhr extends \Controller
             $updateData = $this->data('update_data');
 
             remap($dialogData, $updateData, '
+                autofit,
+                offset,
+                offset_normal,
                 pluginOptions/width     width,
-                pluginOptions/height    height,
-                autofit
+                pluginOptions/height    height
             ');
         }
     }
