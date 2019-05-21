@@ -316,8 +316,6 @@ window["std_ui_dialogs__main_dialog"] = {
             var o = w.options;
             var $w = w.element;
 
-            // p(o);
-
             var $dialog = $w.closest(".ui-dialog");
 
             if (!$dialog.length) {
@@ -327,9 +325,15 @@ window["std_ui_dialogs__main_dialog"] = {
 
                 if (dispatcher.options.tmpStash) {
                     $dialog.hide();
-                } else {
-
                 }
+
+                $dialog.bind("mouseenter." + __nodeId__ + ".reveal", function () {
+                    w.w('dispatcher').hoveredDialog = w;
+                });
+
+                $dialog.bind("mouseleave." + __nodeId__ + ".reveal", function () {
+                    w.w('dispatcher').hoveredDialog = false;
+                });
             }
         },
 
@@ -424,15 +428,17 @@ window["std_ui_dialogs__main_dialog"] = {
             var o = w.options;
             var $w = w.element;
 
-            p('s start');
-
             if (o.state === 'normal') {
-                var positionVector = w.getStashPositionVector();
+                var hoveredDialog = w.w('dispatcher').hoveredDialog;
 
-                // o.state = 'stashed';
-                // o.offset = [positionVector.x, positionVector.y];
+                if (hoveredDialog.uuid !== w.uuid) {
+                    var positionVector = w.getStashPositionVector();
 
-                w.renderOffset([positionVector.x, positionVector.y], duration === 0 ? 0 : duration || 151);
+                    // o.state = 'stashed';
+                    // o.offset = [positionVector.x, positionVector.y];
+
+                    w.renderOffset([positionVector.x, positionVector.y], duration === 0 ? 0 : duration || 151);
+                }
             }
         },
 
@@ -455,16 +461,6 @@ window["std_ui_dialogs__main_dialog"] = {
 
             if (o.state === 'stashed') {
                 w.renderOffset(o.offset_normal, 151);
-
-                var $dialog = w.get$dialog();
-
-                $dialog.bind("mouseenter." + __nodeId__ + ".reveal", function () {
-                    w.w('dispatcher').hoveredDialog = w;
-                });
-
-                $dialog.bind("mouseleave." + __nodeId__ + ".reveal", function () {
-                    w.w('dispatcher').hoveredDialog = false;
-                });
             }
         },
 
